@@ -89,20 +89,14 @@ class Canvas:
             x += self._padding[0] + self._margin[0]
             y += self._padding[1] + self._margin[1]
 
-            if element.position[0] == Position.CENTER:
-                x += ((self._size[0] - element.size[0] - self._margin[2] -
-                      self._padding[2]) - (self._margin[0] + self._padding[0])) // 2
-            elif element.position[0] == Position.RIGHT:
-                x -= self._padding[0] + self._margin[0]
-                x += self._size[0] - element.size[0] - self._margin[2] - self._padding[2]
-
-            if element.position[1] == Position.CENTER:
-                y += ((self._size[1] - element.size[1] - self._margin[3] -
-                      self._padding[3]) - (self._margin[1] + self._padding[1])) // 2
-            elif element.position[1] == Position.LOWER:
-                y -= self._padding[1] + self._margin[1]
-                y += self._size[1] - element.size[1] - \
-                    self._margin[3] - self._padding[3]
+            for i in range(2):
+                xy_pos = self._real_size[i] - element.size[i] - self._padding[i + 2] - self._padding[i]
+                if element.position[i] == Position.CENTER:
+                    x += xy_pos // 2 if i==0 else 0
+                    y += xy_pos // 2 if i==1 else 0
+                elif element.position[i] in(Position.RIGHT, Position.LOWER):
+                    x += xy_pos if i==0 else 0
+                    y += xy_pos if i==1 else 0
 
             self._image.paste(image, (x, y), image)
 
