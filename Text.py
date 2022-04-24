@@ -18,7 +18,8 @@ class Text(Canvas):
     def _redraw(self):
         """Перерисовывает текст"""
         font = ImageFont.truetype(self._font, self._size_font)
-        self._size = self._tuple_add(font.getsize(self._text), self._margin)
+        self._real_size = font.getsize(self._text)
+        self._size = self._tuple_add(self._real_size, self._margin)
         self._image = Image.new("RGBA", self._size, (0, 0, 0, 0))
         ImageDraw.Draw(self._image).text((self._margin[0], self._margin[1]), self._text, self._color, font=font)
 
@@ -26,6 +27,10 @@ class Text(Canvas):
             ImageDraw.Draw(self._image).rectangle((0, 0, self._size[0]-0.5, self._size[1]-0.5), outline=(255, 0, 0, 255))
             ImageDraw.Draw(self._image).rectangle((self._margin[0], self._margin[1], self._size[0] - self._margin[2], self._size[1] - self._margin[3]), outline=(0, 255, 0, 255))
 
+    def retext(self, text):
+        """Изменить текст"""
+        self._text = text
+        if self.auto_update: self._redraw()
 
     def recolor(self, color):
         """Изменить цвет текста"""
