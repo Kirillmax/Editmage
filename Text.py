@@ -12,44 +12,29 @@ class Text(Canvas):
         font = ImageFont.truetype(self._font, self._size_font)
         size = font.getsize(text)
         super().__init__(xy, size, color, blur, margin, padding, position, auto_update)
-    
-    def _redraw(self):
-        """Перерисовывает текст"""
+        
+    def _draw_im(self, image):
+        im = image.copy()
         font = ImageFont.truetype(self._font, self._size_font)
-        self._real_size = font.getsize(self._text)
-        self._size = self._tuple_add(self._real_size, self._margin)
-        self._image = Image.new("RGBA", self._size, (0, 0, 0, 0))
-        ImageDraw.Draw(self._image).text((self._margin[0], self._margin[1]), self._text, self._color, font=font)
+        ImageDraw.Draw(im).text((self._margin[0], self._margin[1]), self._text, self._color, font=font)
 
-        self._dedug()
-
+        return im
 
     def retext(self, text):
         """Изменить текст"""
         self._text = text
+
+        font = ImageFont.truetype(self._font, self._size_font)
+        self._real_size = font.getsize(self._text)
+        self._size = self._tuple_add(self._real_size, self._margin)
+
         if self.auto_update: self._redraw()
 
-    def recolor(self, color):
-        """Изменить цвет текста"""
-        return super().recolor(color)
+    def resize(self, size: int):
+        """Изменить размер текста(размер Font!!!)"""
+        self._size_font = size
+        font = ImageFont.truetype(self._font, self._size_font)
+        self._real_size = font.getsize(self._text)
+        self._size = self._tuple_add(self._real_size, self._margin)
 
-    def reposition(self, position: tuple[Position, Position]):
-        """Изменить положение текста"""
-        return super().reposition(position)
-
-    def recoordinates(self, xy):
-        """Переместить текст"""
-        return super().recoordinates(xy)
-
-    def add(self, element):
-        """Нельзя добавлять элементы в текстовый объект"""
-        raise AttributeError ("Нельзя добавлять элементы в текстовый объект")
-    def remove(self, element):
-        """Нельзя удалять элементы из текстового объекта"""
-        raise AttributeError ("Нельзя удалять элементы из текстового объекта")
-    def remove_index(self, index: int):
-        """Нельзя удалять элементы из текстового объекта"""
-        raise AttributeError ("Нельзя удалять элементы из текстового объекта")
-    def clear(self):
-        """Нельзя очищать текстовый объект от элементов"""
-        raise AttributeError ("Нельзя очищать текстовый объект")
+        if self.auto_update: self._redraw()
