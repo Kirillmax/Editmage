@@ -5,7 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 from Utils.Constants import Position, DEBUG
 
 class Text(Canvas):
-    def __init__(self, text, xy = (0, 0), size = 16, color = (255, 255, 255, 255), font = "arial.ttf", blur = 0, margin = (0, 0, 0, 0), padding = (0, 0, 0, 0), position = (Position.CENTER, Position.NONE), auto_update = True):
+    def __init__(self, text, xy = (0, 0), size = 16, color = (255, 255, 255, 255), font = "arial.ttf", blur = 0, margin = (0, 0, 0, 0), padding = (0, 0, 0, 0), position = (Position.CENTER, Position.CENTER), auto_update = True):
         self._font = font
         self._size_font = size
         self._text = text
