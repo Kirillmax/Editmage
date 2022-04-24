@@ -7,7 +7,7 @@ from Utils.Constants import Position, DEBUG
 Либо включить параметр auto_update = True
 """
 class Canvas:
-    def __init__(self, xy=(0, 0), size=(1, 1), color=(255, 255, 255, 255), blur: float = 0, margin = (0, 0, 0, 0), position = (Position.CENTER, Position.NONE), auto_update: bool = True):
+    def __init__(self, xy=(0, 0), size=(1, 1), color=(255, 255, 255, 255), blur: float = 0, margin = (0, 0, 0, 0), padding = (0, 0, 0, 0), position = (Position.CENTER, Position.NONE), auto_update: bool = True):
         """
         Конструктор класса
         :param xy: позиция элемента (координаты)()
@@ -20,19 +20,18 @@ class Canvas:
         """
         self.auto_update: bool = auto_update
         self._margin = margin
+        self._padding = padding
         self._blur: float = blur
         self._coordinates = xy
         self._position: tuple[Position, Position] = position
-        self._size = self._tuple_add(size, margin)
         self._real_size = size
+        self._size = self._tuple_add(self._real_size, margin)
         self._color = color
         self._image = Image.new("RGBA", self._size, (0, 0, 0 ,0))
         ImageDraw.Draw(self._image).rectangle((self._margin[0], self._margin[1], self._size[0] - self._margin[2], self._size[1] - self._margin[3]), fill=self._color)
         self._elements:list[Canvas] = []  # type: list[Canvas]
-
-        if DEBUG:
-            ImageDraw.Draw(self._image).rectangle((0, 0, self._size[0]-1, self._size[1]-1), outline=(255, 0, 0, 255))
-            ImageDraw.Draw(self._image).rectangle((self._margin[0], self._margin[1], self._size[0] - self._margin[2], self._size[1] - self._margin[3]), outline=(0, 255, 0, 255))
+        
+        self._dedug()
 
     @property
     def image(self): return self._image
@@ -49,6 +48,18 @@ class Canvas:
     @property
     def coordinates(self): return self._coordinates
 
+    def _dedug(self):
+        """
+        Дебуг
+        Рисует границы элементов
+        """
+        if DEBUG:
+            ImageDraw.Draw(self._image).rectangle((0, 0, self._size[0] - 1, self._size[1] - 1), outline=(255, 0, 0, 255))
+            ImageDraw.Draw(self._image).rectangle((self._margin[0] + self._padding[0], self._margin[1] + self._padding[1], self._size[0] - self._margin[2] - self._padding[2], self._size[1] - self._margin[3] - self._padding[3]), outline=(0, 0, 255, 255)) 
+            ImageDraw.Draw(self._image).rectangle((self._margin[0], self._margin[1], self._size[0] - self._margin[2], self._size[1] - self._margin[3]), outline=(0, 255, 0, 255))
+
+
+
     def _tuple_add(self, t1: tuple[int, int], t2: tuple[int, int, int, int]):
         """Сложение двух кортежей"""
         return (t1[0] + t2[0] + t2[2], t1[1] + t2[1] + t2[3])
@@ -63,29 +74,34 @@ class Canvas:
             image = element.image
 
             x, y = element.coordinates
+            x += self._padding[0]
+            y += self._padding[1]
 
             if element.position[0] == Position.CENTER:
                 x = self._margin[0] + (self._size[0] - self._margin[2] - self._margin[0]) // 2 - image.size[0] // 2
             elif element.position[0] == Position.LEFT:
-                x = 0 + self._margin[0]
+                x = 0 + self._margin[0] + self._padding[0]
             elif element.position[0] == Position.RIGHT:
-                x = self._size[0] - element.size[0] - self._margin[2]
+                x = self._size[0] - element.size[0] - self._margin[2] - self._padding[2]
             
             if element.position[1] == Position.CENTER:
                 y = self._margin[1] + (self._size[1] - self._margin[3] - self._margin[1]) // 2 - image.size[1] // 2
             elif element.position[1] == Position.UPPER:
-                y = 0 + self._margin[1]
+                y = 0 + self._margin[1] + self._padding[1]
             elif element.position[1] == Position.LOWER:
-                y = self._size[1] - element.size[1] - self._margin[3]
+                y = self._size[1] - element.size[1] - self._margin[3] - self._padding[3]
 
             self._image.paste(image, (x, y), image)
         
-        if self._blur > 0:
-            self._image = self._image.filter(ImageFilter.GaussianBlur(self._blur))
+        self._image = self._blur_im(self._image)
 
-        if DEBUG:
-            ImageDraw.Draw(self._image).rectangle((0, 0, self._size[0]-1, self._size[1]-1), outline=(255, 0, 0, 255))
-            ImageDraw.Draw(self._image).rectangle((self._margin[0], self._margin[1], self._size[0] - self._margin[2], self._size[1] - self._margin[3]), outline=(0, 255, 0, 255))
+        self._dedug()
+
+
+    def _blur_im(self, image):
+        im = image.copy()
+        if self._blur > 0: return im.filter(ImageFilter.GaussianBlur(self._blur))
+        return im
 
 
     def recolor(self, color):
