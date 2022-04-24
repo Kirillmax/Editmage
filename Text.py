@@ -2,25 +2,30 @@ from abc import abstractclassmethod
 from Canvas import Canvas
 from PIL import Image, ImageDraw, ImageFont
 
-from Utils.Constants import Position
+from Utils.Constants import Position, DEBUG
 
 class Text(Canvas):
-    def __init__(self, text, xy = (0, 0), size = 16, color = (255, 255, 255, 255), font = "arial.ttf", blur = 0, position = (Position.CENTER, Position.NONE), auto_update = True):
+    def __init__(self, text, xy = (0, 0), size = 16, color = (255, 255, 255, 255), font = "arial.ttf", blur = 0, margin = (0, 0, 0, 0), position = (Position.CENTER, Position.NONE), auto_update = True):
         self._font = font
         self._size_font = size
         self._text = text
         # size text width and height
         font = ImageFont.truetype(self._font, self._size_font)
         size = font.getsize(text)
-        super().__init__(xy, size, color, blur, position, auto_update)
+        super().__init__(xy, size, color, blur, margin, position, auto_update)
         self._redraw()
     
     def _redraw(self):
         """Перерисовывает текст"""
         font = ImageFont.truetype(self._font, self._size_font)
-        self._size = font.getsize(self._text)
+        self._size = self._tuple_add(font.getsize(self._text), self._margin)
         self._image = Image.new("RGBA", self._size, (0, 0, 0, 0))
-        ImageDraw.Draw(self._image).text((0, 0), self._text, self._color, font=font)
+        ImageDraw.Draw(self._image).text((self._margin[0], self._margin[1]), self._text, self._color, font=font)
+
+        if DEBUG:
+            ImageDraw.Draw(self._image).rectangle((0, 0, self._size[0]-0.5, self._size[1]-0.5), outline=(255, 0, 0, 255))
+            ImageDraw.Draw(self._image).rectangle((self._margin[0], self._margin[1], self._size[0] - self._margin[2], self._size[1] - self._margin[3]), outline=(0, 255, 0, 255))
+
 
     def recolor(self, color):
         """Изменить цвет текста"""
