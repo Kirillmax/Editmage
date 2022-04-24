@@ -40,6 +40,7 @@ class Canvas:
         ImageDraw.Draw(self._image).rectangle(
             (self._margin[0], self._margin[1], self._size[0] - self._margin[2], self._size[1] - self._margin[3]), fill=self._color)
         self._elements: list[Canvas] = []  # type: list[Canvas]
+        self._redraw()
 
         self._dedug()
 
@@ -80,8 +81,8 @@ class Canvas:
 
         self._image = Image.new("RGBA", self._size, (0, 0, 0, 0))
 
-        ImageDraw.Draw(self._image).rectangle(
-            (self._margin[0], self._margin[1], self._size[0] - self._margin[2], self._size[1] - self._margin[3]), fill=self._color)
+        self._image = self._draw_im(self._image)
+
         for element in self._elements:
             image = element.image
 
@@ -103,6 +104,13 @@ class Canvas:
         self._image = self._blur_im(self._image)
 
         self._dedug()
+
+    def _draw_im(self, image):
+        """Рисует картинку на канвасе"""
+        im = image.copy()
+        ImageDraw.Draw(im).rectangle(
+            (self._margin[0], self._margin[1], self._size[0] - self._margin[2], self._size[1] - self._margin[3]), fill=self._color)
+        return im
 
     def _blur_im(self, image):
         im = image.copy()

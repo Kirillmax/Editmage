@@ -1,8 +1,7 @@
-from abc import abstractclassmethod
 from Canvas import Canvas
 from PIL import Image, ImageDraw, ImageFont
 
-from Utils.Constants import Position, DEBUG
+from Utils.Constants import Position
 
 class Text(Canvas):
     def __init__(self, text, xy = (0, 0), size = 16, color = (255, 255, 255, 255), font = "arial.ttf", blur = 0, margin = (0, 0, 0, 0), padding = (0, 0, 0, 0), position = (Position.CENTER, Position.CENTER), auto_update = True):
@@ -13,7 +12,6 @@ class Text(Canvas):
         font = ImageFont.truetype(self._font, self._size_font)
         size = font.getsize(text)
         super().__init__(xy, size, color, blur, margin, padding, position, auto_update)
-        self._redraw()
     
     def _redraw(self):
         """Перерисовывает текст"""
