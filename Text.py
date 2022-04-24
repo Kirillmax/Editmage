@@ -32,6 +32,7 @@ class Text(Canvas):
 
     def resize(self, size: int):
         """Изменить размер текста(размер Font!!!)"""
+        if size < 1: size = 1
         self._size_font = size
         font = ImageFont.truetype(self._font, self._size_font)
         self._real_size = font.getsize(self._text)
