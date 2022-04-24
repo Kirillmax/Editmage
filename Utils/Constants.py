@@ -1,4 +1,7 @@
+from distutils.debug import DEBUG
 import enum
+
+DEBUG = True
 
 # Перечисление для расположения элемента относительно родителя
 class Position(enum.Enum):
