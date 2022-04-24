@@ -22,7 +22,7 @@ class Window(Canvas):
         for i in range(len(self._radius)):
             radius += (0,) if self._radius[i] < 0 else (self._radius[i],)
         self._radius = radius
-        if 0 not in(self._radius):
+        if any(self._radius):
             w, h = im.size
 
             alpha = Image.new('L', (w, h), 255)
