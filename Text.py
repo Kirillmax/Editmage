@@ -2,15 +2,17 @@ from abc import abstractclassmethod
 from Canvas import Canvas
 from PIL import Image, ImageDraw, ImageFont
 
+from Utils.Constants import Position
+
 class Text(Canvas):
-    def __init__(self, text, position = (0, 0), size = 16, color = (255, 255, 255, 255), font = "arial.ttf", blur = 0, auto_update = True):
+    def __init__(self, text, xy = (0, 0), size = 16, color = (255, 255, 255, 255), font = "arial.ttf", blur = 0, position = (Position.CENTER, Position.NONE), auto_update = True):
         self._font = font
         self._size_font = size
         self._text = text
         # size text width and height
         font = ImageFont.truetype(self._font, self._size_font)
         size = font.getsize(text)
-        super().__init__(position, size, color, blur, auto_update)
+        super().__init__(xy, size, color, blur, position, auto_update)
         self._redraw()
     
     def _redraw(self):
@@ -24,9 +26,13 @@ class Text(Canvas):
         """Изменить цвет текста"""
         return super().recolor(color)
 
-    def reposition(self, xy):
-        """Изменить позицию текста"""
-        return super().reposition(xy)      
+    def reposition(self, position: tuple[Position, Position]):
+        """Изменить положение текста"""
+        return super().reposition(position)
+
+    def recoordinates(self, xy):
+        """Переместить текст"""
+        return super().recoordinates(xy)
 
     def add(self, element):
         """Нельзя добавлять элементы в текстовый объект"""
