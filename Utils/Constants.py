@@ -7,8 +7,4 @@ class Position(enum.Enum):
     LEFT        =  1 # ← Левый
     RIGHT       =  2 # → Правый
     LOWER       =  3 # ↓ Нижний
-    UPPER_LEFT  =  4 # ↖ Верхний левый
-    UPPER_RIGHT =  5 # ↗ Верхний правый
-    CENTER      =  6 # ● Центр
-    LOWER_LEFT  =  7 # ↙ Нижний левый
-    LOWER_RIGHT =  8 # ↘ Нижний правый
+    CENTER      =  4 # ● Центр
