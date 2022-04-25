@@ -1,3 +1,5 @@
+from io import BytesIO
+import base64, io
 from PIL import Image, ImageFilter, ImageDraw
 
 from Utils.Constants import Position, DEBUG
@@ -186,6 +188,16 @@ class Canvas:
     def update(self):
         """Обновляет элемент"""
         self._redraw()
+
+    def get_base64(self):
+        im = self._image.copy()
+
+        buffered = BytesIO()
+        im.save(buffered, format = "PNG")
+
+        base64_bytes = base64.b64encode(buffered.getvalue())
+        base64_str = ("data:image/png;base64," + base64_bytes.decode('utf-8'))
+        return base64_str
 
     def swap_elements(self, element1, element2):
         """
