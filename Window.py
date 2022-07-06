@@ -5,11 +5,11 @@ from datetime import datetime
 
 
 class Window(Canvas):
-    def __init__(self, xy = (0, 0), size = (1, 1), color = (255, 255, 255, 255), radius: tuple[(int, int, int, int)] = (0, 0, 0, 0), blur = 0, margin = (0, 0, 0, 0), padding = (0, 0, 0, 0), position = (Position.CENTER, Position.CENTER), render = 5, auto_update = True):
+    def __init__(self, xy = (0, 0), size = (1, 1), color = (255, 255, 255, 255), radius: tuple[(int, int, int, int)] = (0, 0, 0, 0), blur = 0, margin = (0, 0, 0, 0), padding = (0, 0, 0, 0), position = (Position.CENTER, Position.CENTER) , origin = (Position.CENTER, Position.CENTER), render = 1, auto_update = True):
         self._radius = radius
         self._circle = Image.new('L', (200, 200), 0)
         ImageDraw.Draw(self._circle).ellipse((0, 0, 200, 200), 255)
-        super().__init__(xy, size, color, blur, margin, padding, position, render, auto_update)
+        super().__init__(xy, size, color, blur, margin, padding, position, origin, render, auto_update)
 
 
     def _draw_im(self, image, render = None):
@@ -25,7 +25,7 @@ class Window(Canvas):
         big_start = datetime.now()
         if render is None: render = self._render
 
-        w, h = self.real_size
+        w, h = self.indented_size
         w, h = (int(w * render), int(h * render))
 
         im = Image.new("RGBA", (w, h), self._color)
@@ -68,5 +68,4 @@ class Window(Canvas):
     
     def reradius(self, radius: tuple[(int, int, int, int)]):
         self._radius = radius
-        if self.auto_update: self._redraw()
-
+        if self.auto_update: self._image = self._redraw()

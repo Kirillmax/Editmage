@@ -1,7 +1,6 @@
 from io import BytesIO
-import base64, io
+import base64
 from PIL import Image, ImageFilter, ImageDraw
-from matplotlib.animation import ImageMagickBase
 
 from Utils.Constants import Position, DEBUG
 
@@ -12,10 +11,11 @@ from Utils.Constants import Position, DEBUG
 
 
 class Canvas:
-    def __init__(self, xy=(0, 0), size=(1, 1), color=(255, 255, 255, 255), blur: float = 0, margin=(0, 0, 0, 0), padding=(0, 0, 0, 0), position=(Position.CENTER, Position.CENTER), render = 1, auto_update: bool = True):
+    def __init__(self, xy=(0, 0), size=(1, 1), color=(255, 255, 255, 255), blur: float = 0, margin=(0, 0, 0, 0), padding=(0, 0, 0, 0), position=(Position.CENTER, Position.CENTER), origin=(Position.CENTER, Position.CENTER), render = 1, auto_update: bool = True):
         """
         Конструктор класса
         :param xy: позиция элемента (координаты)()
+        :param origin: отсчет позиции элемента (Position.CENTER, Position.CENTER)
         :param position: позиция элемента относитнльно родителя и отсчет координат (Position.CENTER, Position.UPPER)
          ______            ______
         |      |          |∘ →x  |
@@ -36,15 +36,21 @@ class Canvas:
         self._padding = padding
         self._blur: float = blur
         self._coordinates = xy
+
         self._position: tuple[Position, Position] = position
-        self._real_size = size
-        self._size = self._tuple_add(self._tuple_add(self._real_size, self._margin), self._padding)
+
+        self._origin: tuple[Position, Position] = origin
+
+        self._size = size
+        # Размер элемента с учетом PADDINGS
+        self._indented_size = self._tuple_add(self._size, self._padding)
+        # Размер элемента с учетом PADDINGS and MARGINS
+        self._block_size = self._tuple_add(self._indented_size, self._margin)
+
         self._color = color
         self._image = Image.new("RGBA", (1, 1))
         self._elements: list[Canvas] = []  # type: list[Canvas]
-        self._redraw()
-
-        self._dedug()
+        self._image = self._redraw()
 
     @property
     def image(self): return self._image
@@ -53,29 +59,55 @@ class Canvas:
     def size(self): return self._size
 
     @property
-    def real_size(self): return self._real_size
-   
+    def indented_size(self): return self._indented_size
+
     @property
-    def size_add_padding(self): return self._tuple_add(self._real_size, self._padding)
+    def block_size(self): return self._block_size
+    
+    @property
+    def margin(self): return self._margin
+    
+    @property
+    def padding(self): return self._padding
 
     @property
     def position(self): return self._position
+    
+    @property
+    def origin(self): return self._origin
 
     @property
     def coordinates(self): return self._coordinates
 
-    def _dedug(self):
+    def _dedug(self, image):
         """
         Дебаг
         Рисует границы элементов
         """
+
+        im = image.copy()
+
         if DEBUG:
-            ImageDraw.Draw(self._image).rectangle(
-                (0, 0, self._size[0] - 1, self._size[1] - 1), outline=(255, 0, 0, 255))
-            ImageDraw.Draw(self._image).rectangle((self._margin[0] + self._padding[0], self._margin[1] + self._padding[1], self._size[0] -
-                                                   self._margin[2] - self._padding[2], self._size[1] - self._margin[3] - self._padding[3]), outline=(0, 0, 255, 255))
-            ImageDraw.Draw(self._image).rectangle(
-                (self._margin[0], self._margin[1], self._size[0] - self._margin[2], self._size[1] - self._margin[3]), outline=(0, 255, 0, 255))
+            RED = (255, 0, 0, 255)
+            GREEN = (0, 255, 0, 255)
+            BLUE = (0, 0, 255, 255)
+
+            ImageDraw.Draw(im).rectangle(
+                (0, 0,
+                 self._block_size[0] - 1, self._block_size[1] - 1),
+                outline=RED
+            )
+            ImageDraw.Draw(im).rectangle(
+                (self._margin[0] + self._padding[0], self._margin[1] + self._padding[1],
+                 self._size[0] + self._margin[0] + self._padding[0], self._size[1] + self._margin[1] + self._padding[1]),
+                outline=BLUE
+            )
+            ImageDraw.Draw(im).rectangle(
+                (self._margin[0], self._margin[1],
+                 self._indented_size[0] + self._margin[0], self._indented_size[1] + self._margin[1]),
+                outline=GREEN
+            )
+        return im
 
     def _tuple_add(self, t1: tuple[int, int], t2: tuple[int, int, int, int]):
         """Сложение двух кортежей"""
@@ -86,78 +118,94 @@ class Canvas:
 
         if render is None: render = self._render
 
-        w, h = self._size
+        # создаем картинку прозрачной и размером с учетом отступов
+        w, h = self._block_size
 
-        self._image = Image.new("RGBA", (int(w * render), int(h * render)), (0, 0, 0, 0))
+        im = Image.new("RGBA", (int(w * render), int(h * render)), (0, 0, 0, 0))
 
-        self._image = self._draw_im(self._image)
+        # Рисует сам элемент
+        im = self._draw_im(im, render)
 
-        self._image = self._image.resize(self._size, Image.LANCZOS)
+        im = im.resize((w, h), Image.LANCZOS)
 
+        # Рисует дочерние элементы
         for element in self._elements:
             image = element.image
 
-            x, y = element.coordinates
-            x += self._padding[0] + self._margin[0]
-            y += self._padding[1] + self._margin[1]
+            # Создаем кордиинаты
+            x, y = element.coordinates[0], element.coordinates[1]
+            # Смещаем координаты на отступы слева и сверху(также и у дочернего элемента)
+            x += self._padding[0] + self._margin[0] - element.margin[0]
+            y += self._padding[1] + self._margin[1] - element.margin[1]
 
+            # считаем нахождение координат отрисовки дочернего элемента
             for i in range(2):
-                xy_pos = self._real_size[i] - element.size[i]
-                if element.position[i] == Position.CENTER:
-                    x += xy_pos // 2 if i==0 else 0
-                    y += xy_pos // 2 if i==1 else 0
-                elif element.position[i] in(Position.RIGHT, Position.LOWER):
-                    x += xy_pos if i==0 else 0
-                    y += xy_pos if i==1 else 0
+                def pos_percent(position: Position):
+                    if position == Position.CENTER: return .5
+                    elif position in (Position.RIGHT, Position.LOWER): return 1
+                    return 0
+                # position
+                coord = self._size[i] * pos_percent(element.position[i])
+                # origin
+                coord -= element.indented_size[i] * pos_percent(element.origin[i])
+                # обновляем координаты
+                x += int(coord) if i == 0 else 0
+                y += int(coord) if i == 1 else 0
 
-            if element._blur > 0:
-                # чтобы тень не делала изображение полупрозрачным
-                image_a = Image.new("RGBA", self._image.size)
+            if element._blur > 0 or element._color[3] > 0:
+                # чтобы размытие(blur которые пременен к Дочерним элементам!) или прозрачность картинки не делала изображение(родителя) полупрозрачным
+                image_a = Image.new("RGBA", im.size)
                 image_a.paste(image, (x, y), image)
-                self._image = Image.alpha_composite(self._image, image_a)
+                im = Image.alpha_composite(im, image_a)
             else:
-                self._image.paste(image, (x, y), image)
+                im.paste(image, (x, y), image)
 
+        # Размываем картинку
+        im = self._blur_im(im)
 
-        self._image = self._blur_im(self._image)
+        im = self._dedug(im)
+        
+        return im
 
-
-        self._dedug()
-
-    def _draw_im(self, image, render = None):
+    def _draw_im(self, image, render=None):
         """Рисует картинку на канвасе"""
         if render is None: render = self._render
 
         im = image.copy()
         ImageDraw.Draw(im).rectangle(
-            (self._margin[0] * render, self._margin[1] * render, (self._size[0] - self._margin[2]) * render, (self._size[1] - self._margin[3]) * render), fill=self._color)
+            (self._margin[0] * render,
+             self._margin[1] * render,
+             (self._margin[0] + self._indented_size[0]) * render,
+             (self._margin[1] + self._indented_size[1]) * render),
+            fill = self._color
+        )
         return im
 
     def _blur_im(self, image):
         im = image.copy()
-        if self._blur > 0:
-            return im.filter(ImageFilter.GaussianBlur(self._blur))
+        if self._blur > 0: return im.filter(ImageFilter.GaussianBlur(self._blur))
         return im
 
     def recolor(self, color):
         """Изменить цвет элемента"""
         self._color = color
         if self.auto_update:
-            self._redraw()
+            self._image = self._redraw()
 
     def repadding(self, padding):
         """Изменить внутренние отстыпы у элемента (учитываются при xy/position)"""
         self._padding = padding
-        self._size = self._tuple_add(self._tuple_add(self._real_size, self._margin), self._padding)
-        if self.auto_update:
-            self._redraw()
+        self._indented_size = self._tuple_add(self._size, self._padding)
+        self._block_size = self._tuple_add(self._indented_size, self._margin)
+
+        if self.auto_update: self._image = self._redraw()
 
     def remargin(self, margin):
         """Изменить внешние отстыпы у элемента (учитываются при xy/position)"""
         self._margin = margin
-        self._size = self._tuple_add(self._tuple_add(self._real_size, self._margin), self._padding)
-        if self.auto_update:
-            self._redraw()
+        self._block_size = self._tuple_add(self._indented_size, self._margin)
+
+        if self.auto_update: self._image = self._redraw()
 
     def reblur(self, blur):
         """
@@ -173,47 +221,55 @@ class Canvas:
             self._blur = 0
             print("Размытие должно быть положительным. 'blur' установлен на 0")
         if self.auto_update:
-            self._redraw()
+            self._image = self._redraw()
 
     def resize(self, size):
         """Изменить размер элемента"""
-        if size == self._real_size:
+        if size == self._size:
             return
         if size[0] > 0:
-            self._real_size = (size[0], self._real_size[1])
+            self._size = (size[0], self._size[1])
         else:
-            self._real_size = (1, self._real_size[1])
+            self._size = (1, self._size[1])
             print("Размер должен быть положительным. 'size' установлен на (1, x)")
         if size[1] > 0:
-            self._real_size = (self._real_size[0], size[1])
+            self._size = (self._size[0], size[1])
         else:
-            self._real_size = (self._real_size[0], 1)
+            self._size = (self._size[0], 1)
             print("Размер должен быть положительным. 'size' установлен на (x, 1)")
-        self._size = self._tuple_add(self._tuple_add(self._real_size, self._margin), self._padding)
-        if self.auto_update:
-            self._redraw()
+
+        self._indented_size = self._tuple_add(self._size, self._padding)
+        self._block_size = self._tuple_add(self._indented_size, self._margin)
+
+        if self.auto_update: self._image = self._redraw()
 
     def reposition(self, position: tuple[Position, Position]):
         """Переместить элемент"""
         self._position = position
         if self.auto_update:
-            self._redraw()
+            self._image = self._redraw()
+    
+    def reorigin(self, origin: tuple[Position, Position]):
+        """Центр элемента"""
+        self._origin = origin
+        if self.auto_update:
+            self._image = self._redraw()
 
     def recoordinates(self, xy):
         """Переместить элемент"""
         self._coordinates = xy
         if self.auto_update:
-            self._redraw()
+            self._image = self._redraw()
 
     def update(self):
         """Обновляет элемент"""
-        self._redraw()
+        self._image = self._redraw()
 
     def get_base64(self):
         im = self._image.copy()
 
         buffered = BytesIO()
-        im.save(buffered, format = "PNG")
+        im.save(buffered, format="PNG")
 
         base64_bytes = base64.b64encode(buffered.getvalue())
         base64_str = ("data:image/png;base64," + base64_bytes.decode('utf-8'))
@@ -229,7 +285,7 @@ class Canvas:
             self._elements[self._elements.index(element1)] = element2
             self._elements[self._elements.index(element2)] = element1
             if self.auto_update:
-                self._redraw()
+                self._image = self._redraw()
 
     def move_element(self, element, index):
         """
@@ -241,7 +297,7 @@ class Canvas:
             self._elements.remove(element)
             self._elements.insert(index, element)
             if self.auto_update:
-                self._redraw()
+                self._image = self._redraw()
 
     def add(self, element, index: int = -1):
         """
@@ -258,7 +314,7 @@ class Canvas:
                 raise IndexError(
                     f"Индекс(index = {index}) вне допустимого диапазона!")
         if self.auto_update:
-            self._redraw()
+            self._image = self._redraw()
 
     def remove(self, element):
         """
@@ -268,7 +324,7 @@ class Canvas:
         if element in self._elements:
             self._elements.remove(element)
             if self.auto_update:
-                self._redraw()
+                self._image = self._redraw()
 
     def remove_index(self, index: int):
         """
@@ -281,24 +337,19 @@ class Canvas:
             raise IndexError(
                 f"Индекс(index = {index}) вне допустимого диапазона!")
         if self.auto_update:
-            self._redraw()
+            self._image = self._redraw()
 
     def clear_elements(self):
         """Очистить элемент от всех дочерних элементов"""
         self._elements.clear()
         if self.auto_update:
-            self._redraw()
+            self._image = self._redraw()
 
     def render(self, render: int):
-        
-        # for element in self._elements:
-        #     self._image = element.render(render)
-        if self.auto_update:
-            self._redraw()
-        return self._image
+        return self._redraw(render)
 
     def show(self):
         """Показать изображение. Вызывать после обновления(если автоматическое обновление НЕ включено)"""
         if self.auto_update:
-            self._redraw()
+            self._image = self._redraw()
         self._image.show()
