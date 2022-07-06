@@ -2,7 +2,7 @@ from io import BytesIO
 import base64
 from PIL import Image, ImageFilter, ImageDraw
 
-from Utils.Constants import Position, DEBUG
+from Utils.Constants import Position, Quality, DEBUG
 
 """
 Для обновления канваса необходимо вызвать функцию update()
@@ -160,6 +160,51 @@ class Canvas:
 
         # Размываем картинку
         im = self._blur_im(im)
+
+        im = self._dedug(im)
+        
+        return im
+
+    def _redraw_rend(self, render = None):
+        """Перерисовывает канвас"""
+
+        if render is None: render = self._render
+        
+        im = Image.new("RGBA", (int(self._block_size[0] * render), int(self._block_size[1] * render)), (0, 0, 0, 0))
+        im = self._draw_im(im, render)
+
+        for element in self._elements:
+            image = element._redraw_rend(render)
+
+            x, y = int(element.coordinates[0] * render), int(element.coordinates[1] * render)
+            # Смещаем координаты на отступы слева и сверху(также и у дочернего элемента)
+            x += int((self._padding[0] + self._margin[0] - element.margin[0]) * render)
+            y += int((self._padding[1] + self._margin[1] - element.margin[1]) * render)
+
+            # считаем нахождение координат отрисовки дочернего элемента
+            for i in range(2):
+                def pos_percent(position: Position):
+                    if position == Position.CENTER: return .5
+                    elif position in (Position.RIGHT, Position.LOWER): return 1
+                    return 0
+                # position
+                coord = self._size[i] * pos_percent(element.position[i])
+                # origin
+                coord -= element.indented_size[i] * pos_percent(element.origin[i])
+                # обновляем координаты
+                x += int(coord * render) if i == 0 else 0
+                y += int(coord * render) if i == 1 else 0
+
+            if element._blur > 0 or element._color[3] > 0:
+                # чтобы размытие(blur которые пременен к Дочерним элементам!) или прозрачность картинки не делала изображение(родителя) полупрозрачным
+                image_a = Image.new("RGBA", im.size)
+                image_a.paste(image, (x, y), image)
+                im = Image.alpha_composite(im, image_a)
+            else:
+                im.paste(image, (x, y), image)
+
+        # Размываем картинку
+        if self._blur > 0: return im.filter(ImageFilter.GaussianBlur(int(self._blur * render)))
 
         im = self._dedug(im)
         
@@ -343,8 +388,11 @@ class Canvas:
         if self.auto_update:
             self._image = self._redraw()
 
-    def render(self, render: int):
-        return self._redraw(render)
+    def render(self, quality: Quality):        
+        q = int(quality.value)  / min(self._block_size)
+  
+        im = self._redraw_rend(self._render + q)
+        return im.resize((int(self._block_size[0] * q), int(self._block_size[1] * q)), Image.LANCZOS)
 
     def copy(self):
         canvas = Canvas(
