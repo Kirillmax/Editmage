@@ -1,6 +1,8 @@
 /.vscode
 test.py
 /mytest
+/Web
+/test.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
