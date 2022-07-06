@@ -43,7 +43,7 @@ class Text(Canvas):
         """
         str = self._text.split("\n")
         max_line_str = max(str, key=len)
-        w = int(self._get_font_size(max_line_str)[0])
+        w = int(self._get_font_size(max_line_str)[0] + (self._get_font_size(' ')[0] / 2)) # прибавляем половину пустой клетки(иногда дальний символ обрезает)
 
         h = int((len(str)) * self._get_font_size()[1])
         return (w, h)

@@ -124,7 +124,7 @@ class Canvas:
         # Рисует сам элемент
         im = self._draw_im(im, render)
         # меняем размер элемента на заданный(без render)
-        im = im.resize((w, h), Image.LANCZOS)
+        im = im.resize((int(w), int(h)), Image.LANCZOS)
 
         # Рисует дочерние элементы
         for element in self._elements:
@@ -147,13 +147,13 @@ class Canvas:
                 # origin
                 coord -= element.indented_size[i] * pos_percent(element.origin[i])
                 # обновляем координаты
-                x += int(coord) if i == 0 else 0
-                y += int(coord) if i == 1 else 0
+                x += coord if i == 0 else 0
+                y += coord if i == 1 else 0
 
             if element._blur > 0 or element._color[3] > 0:
                 # чтобы размытие(blur которые пременен к Дочерним элементам!) или прозрачность картинки не делала изображение(родителя) полупрозрачным
                 image_a = Image.new("RGBA", im.size)
-                image_a.paste(image, (x, y), image)
+                image_a.paste(image, (int(x), int(y)), image)
                 im = Image.alpha_composite(im, image_a)
             else:
                 im.paste(image, (x, y), image)
@@ -176,10 +176,10 @@ class Canvas:
         for element in self._elements:
             image = element._redraw_rend(render)
 
-            x, y = int(element.coordinates[0] * render), int(element.coordinates[1] * render)
+            x, y = element.coordinates[0] * render, element.coordinates[1] * render
             # Смещаем координаты на отступы слева и сверху(также и у дочернего элемента)
-            x += int((self._padding[0] + self._margin[0] - element.margin[0]) * render)
-            y += int((self._padding[1] + self._margin[1] - element.margin[1]) * render)
+            x += (self._padding[0] + self._margin[0] - element.margin[0]) * render
+            y += (self._padding[1] + self._margin[1] - element.margin[1]) * render
 
             # считаем нахождение координат отрисовки дочернего элемента
             for i in range(2):
@@ -192,13 +192,13 @@ class Canvas:
                 # origin
                 coord -= element.indented_size[i] * pos_percent(element.origin[i])
                 # обновляем координаты
-                x += int(coord * render) if i == 0 else 0
-                y += int(coord * render) if i == 1 else 0
+                x += coord * render if i == 0 else 0
+                y += coord * render if i == 1 else 0
 
             if element._blur > 0 or element._color[3] > 0:
                 # чтобы размытие(blur которые пременен к Дочерним элементам!) или прозрачность картинки не делала изображение(родителя) полупрозрачным
                 image_a = Image.new("RGBA", im.size)
-                image_a.paste(image, (x, y), image)
+                image_a.paste(image, (int(x), int(y)), image)
                 im = Image.alpha_composite(im, image_a)
             else:
                 im.paste(image, (x, y), image)
