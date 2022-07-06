@@ -17,8 +17,11 @@ if __name__ == "__main__":
     shadow.repadding((10, 10, 10, 10))
 
     circle1 = Window((24, 0), (12, 12), (128, 128, 128, 230), radius = (6, 6, 6, 6), padding=(0, 0, 0, 0), position=(Position.LEFT, Position.CENTER), render = 5)
-    circle2 = Window((48, 0), (12, 12), (128, 128, 128, 230), radius = (6, 6, 6, 6), padding=(0, 0, 0, 0), position=(Position.LEFT, Position.CENTER), render = 5)
-    circle3 = Window((72, 0), (12, 12), (128, 128, 128, 230), radius = (6, 6, 6, 6), padding=(0, 0, 0, 0), position=(Position.LEFT, Position.CENTER), render = 5)
+    circle2 = circle1.copy()
+    circle2.recoordinates((48, 0))
+    circle3 = circle1.copy()
+    circle3.recoordinates((72, 0))
+    
     top_panel.add(circle1)
     top_panel.add(circle2)
     top_panel.add(circle3)
