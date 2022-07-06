@@ -1,18 +1,37 @@
-from Utils.Constants import Position
+from Utils.Constants import Position, DEBUG
 from Window import Window
 from Canvas import Canvas
 from Text import Text
 
 if __name__ == "__main__":
 
-    canvas = Canvas((0, 0), (700, 700), (255, 255, 255, 255), padding=(10, 10, 10, 10), margin=(20, 20, 20, 20))
+    text = Text("Hello, wo\nljg k/jlk\nrhjk ghkl\ndjhjkhjk!", (0, 0), 20, (255, 255, 255, 255), render = 5)
 
-    panel2 = Window((0, 0), (300, 300), (108, 123, 247, 255), radius = 100, position=(Position.RIGHT, Position.LOWER), margin=(0, 50, 25, 10))
-    canvas.add(panel2)
-    panel1 = Window((0, 0), (200, 200), (255, 255, 189, 255), padding=(10, 10, 10, 10), margin=(20, 20, 20, 20))
-    canvas.add(panel1)
+    text.retext("Hello, world!\nHello, world!\nHello, world!")
+    panel = Window((0, 0), text.size, (30, 30, 30, 255), radius = (0, 0, 12, 12), padding=(20, 20, 20, 20), position=(Position.CENTER, Position.LOWER), origin=(Position.CENTER, Position.LOWER), render = 5)
 
-    panel1.add(Text("Hello, world!", (0, 0), 16, (0, 0, 0, 255)))
-    panel1.reradius(50)
-    panel1.recolor((255, 0, 0, 255))
+    top_panel = Window((0, 0), (panel.indented_size[0], 20), (30, 30, 30, 220), radius = (12, 12, 0, 0), position=(Position.CENTER, Position.UPPER), origin=(Position.CENTER, Position.UPPER), render = 5)
+
+    shadow = Window((0, 0), (panel.indented_size[0], panel.indented_size[1] + 20), (0, 0, 0, 255), radius = (15, 15, 15, 15), blur=20, render = 5)
+    shadow.remargin((50, 50, 50, 50))
+    shadow.repadding((10, 10, 10, 10))
+
+    circle1 = Window((24, 0), (12, 12), (128, 128, 128, 230), radius = (6, 6, 6, 6), padding=(0, 0, 0, 0), position=(Position.LEFT, Position.CENTER), render = 5)
+    circle2 = Window((48, 0), (12, 12), (128, 128, 128, 230), radius = (6, 6, 6, 6), padding=(0, 0, 0, 0), position=(Position.LEFT, Position.CENTER), render = 5)
+    circle3 = Window((72, 0), (12, 12), (128, 128, 128, 230), radius = (6, 6, 6, 6), padding=(0, 0, 0, 0), position=(Position.LEFT, Position.CENTER), render = 5)
+    top_panel.add(circle1)
+    top_panel.add(circle2)
+    top_panel.add(circle3)
+
+    panel.add(text)
+
+    canvas = Canvas((0, 0), (panel._indented_size[0], panel._indented_size[1] + 20), (255, 255, 255), padding=(100, 100, 100, 100), render = 5)
+
+    canvas.add(shadow)
+    canvas.add(panel)
+    canvas.add(top_panel)
+
     canvas.show()
+
+    # canvas.image.convert("RGB").save("test.png")
+    
