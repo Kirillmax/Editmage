@@ -9,7 +9,6 @@ from Utils.Constants import Position, DEBUG
 Либо включить параметр auto_update = True
 """
 
-
 class Canvas:
     def __init__(self, xy=(0, 0), size=(1, 1), color=(255, 255, 255, 255), blur: float = 0, margin=(0, 0, 0, 0), padding=(0, 0, 0, 0), position=(Position.CENTER, Position.CENTER), origin=(Position.CENTER, Position.CENTER), render = 1, auto_update: bool = True):
         """
@@ -17,10 +16,10 @@ class Canvas:
         :param xy: позиция элемента (координаты)()
         :param origin: отсчет позиции элемента (Position.CENTER, Position.CENTER)
         :param position: позиция элемента относитнльно родителя и отсчет координат (Position.CENTER, Position.UPPER)
-         ______            ______
-        |      |          |∘ →x  |
-        |  ∘ →x|          |↓y    |
-        |__↓y__|          |______|
+        _______           _______          ________
+        |      |          |∘ →x  |         |∘  ∘  ∘|
+        |  ∘ →x|          |↓y    |         |∘  ○  ∘|
+        |__↓y__|          |______|         |∘__∘__∘|
         (CENTER, CENTER) (LEFT, UPPER)
         :param size: размер элемента (width, height)
         :param real_size: размер элемента без учета margin и padding (width, height)
@@ -29,6 +28,7 @@ class Canvas:
         :param auto_update: автоматическое обновление канваса
         :param margin: границы элемента (учитывается при xy/position)(left, top, right, bottom)
         :param padding: поля элемента (учитывается при xy/position)(left, top, right, bottom)
+        :param render: качество итогового элемента(изображения)
         """
         self.auto_update: bool = auto_update
         self._render = render
@@ -48,7 +48,6 @@ class Canvas:
         self._block_size = self._tuple_add(self._indented_size, self._margin)
 
         self._color = color
-        self._image = Image.new("RGBA", (1, 1))
         self._elements: list[Canvas] = []  # type: list[Canvas]
         self._image = self._redraw()
 
@@ -120,12 +119,11 @@ class Canvas:
 
         # создаем картинку прозрачной и размером с учетом отступов
         w, h = self._block_size
-
+        # делаем ее больше на render 
         im = Image.new("RGBA", (int(w * render), int(h * render)), (0, 0, 0, 0))
-
         # Рисует сам элемент
         im = self._draw_im(im, render)
-
+        # меняем размер элемента на заданный(без render)
         im = im.resize((w, h), Image.LANCZOS)
 
         # Рисует дочерние элементы
@@ -347,6 +345,22 @@ class Canvas:
 
     def render(self, render: int):
         return self._redraw(render)
+
+    def copy(self):
+        canvas = Canvas(
+            self._coordinates,
+            self._size,
+            self._color,
+            self._blur,
+            self._margin,
+            self._padding,
+            self._position,
+            self._origin,
+            self._render,
+            self.auto_update)
+        for element in self._elements:
+            canvas.add(element.copy())
+        return canvas
 
     def show(self):
         """Показать изображение. Вызывать после обновления(если автоматическое обновление НЕ включено)"""

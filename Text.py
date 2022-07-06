@@ -68,3 +68,19 @@ class Text(Canvas):
         self._block_size = self._indented_size = self._size = self._get_size()
 
         if self.auto_update: self._image = self._redraw()
+
+    def copy(self):
+        text = Text(
+            self._text,
+            self._coordinates,
+            self._font_size,
+            self._color,
+            self._font,
+            self._blur,
+            self._position,
+            self._origin,
+            self._render,
+            self.auto_update)
+        for element in self._elements:
+            text.add(element.copy())
+        return text

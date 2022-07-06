@@ -69,3 +69,20 @@ class Window(Canvas):
     def reradius(self, radius: tuple[(int, int, int, int)]):
         self._radius = radius
         if self.auto_update: self._image = self._redraw()
+
+    def copy(self):
+        window = Window(
+            self._coordinates,
+            self._size,
+            self._color,
+            self._radius,
+            self._blur,
+            self._margin,
+            self._padding,
+            self._position,
+            self._origin,
+            self._render,
+            self.auto_update)
+        for element in self._elements:
+            window.add(element.copy())
+        return window
