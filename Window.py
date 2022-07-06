@@ -16,7 +16,7 @@ class Window(Canvas):
         if render is None: render = self._render
 
         back = image.copy()
-        im = self._add_radius()
+        im = self._add_radius(render)
         back.paste(im, (int(self._margin[0] * render), int(self._margin[1] * render)), im)
         return back 
 
